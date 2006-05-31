@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+use warnings;
+
+$CVSROOT = ":pserver:anoncvs\@cvs.webwork.rochester.edu:/webwork/cvs/system";
+
+$release_tag = "rel-2-2-1";
+$branch_tag = "rel-2-2-dev";
+$version_suffix = "-2.2.1";
+
+%modules = (
+	webwork2 => "webwork$version_suffix",
+	pg => "pg$version_suffix",
+);
+
+sub call_system($) {
+	warn "SYSTEM: $_[0]\n";
+	system $_[0];
+}
+
+foreach $module (keys %modules) {
+	my $checkout_dir = $modules{$module};
+	call_system qq#cvs -d "$CVSROOT" checkout -r "$release_tag" -d "$checkout_dir" "$module"#;
+	call_system qq#cd "$checkout_dir" && find . -regex '.*/CVS/\\(Tag\\|Entries\\)' -print0 | xargs -0 perl -pi -e 's/$release_tag\$/$branch_tag/'#;
+	call_system qq#tar -czf "$checkout_dir".tar.gz "$checkout_dir"#;
+	call_system qq#tar -cjf "$checkout_dir".tar.bz2 "$checkout_dir"#;
+	call_system qq#ftp -a -u ftp://upload.sf.net/incoming/ "$checkout_dir".tar.gz#;
+	call_system qq#ftp -a -u ftp://upload.sf.net/incoming/ "$checkout_dir".tar.bz2#;
+}
