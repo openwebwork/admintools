@@ -2,7 +2,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2003 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: webwork2/bin/mkhtmldocs,v 1.2 2003/12/09 01:12:28 sh002i Exp $
+# $CVSHeader: admintools/wwdocs2html,v 1.1 2006/01/31 18:28:56 sh002i Exp $
 # 
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -28,7 +28,7 @@ $ENV{PATH} = "";
 $ENV{ENV} = "";
 
 our $CHECKOUT_DIR = "/webwork/docs2html";
-our $DOC_DIR = "/webwork/www/vhosts/main/doc/cvs";
+our $DOC_DIR = "/webwork/www/main/doc/cvs";
 
 our @FILETYPES = (
 	# files in all caps are usually text files
