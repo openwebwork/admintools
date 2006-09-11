@@ -4,9 +4,17 @@ use warnings;
 
 $CVSROOT = ":pserver:anoncvs\@cvs.webwork.rochester.edu:/webwork/cvs/system";
 
-$release_tag = "rel-2-2-1";
-$branch_tag = "rel-2-2-dev";
-$version_suffix = "-2.2.1";
+unless (@ARGV == 1) {
+	print STDERR "Usage: $0 version\n";
+	exit 1;
+}
+
+my $vers = $ARGV[0];
+my ($maj, $min, $patch) = split /\./, $vers;
+
+$release_tag = "rel-$maj-$min-$patch";
+$branch_tag = "rel-$maj-$min-dev";
+$version_suffix = "-$vers";
 
 %modules = (
 	webwork2 => "webwork$version_suffix",
@@ -24,6 +32,9 @@ foreach $module (keys %modules) {
 	call_system qq#cd "$checkout_dir" && find . -regex '.*/CVS/\\(Tag\\|Entries\\)' -print0 | xargs -0 perl -pi -e 's/$release_tag\$/$branch_tag/'#;
 	call_system qq#tar -czf "$checkout_dir".tar.gz "$checkout_dir"#;
 	call_system qq#tar -cjf "$checkout_dir".tar.bz2 "$checkout_dir"#;
-	call_system qq#ftp -a -u ftp://upload.sf.net/incoming/ "$checkout_dir".tar.gz#;
-	call_system qq#ftp -a -u ftp://upload.sf.net/incoming/ "$checkout_dir".tar.bz2#;
+#	call_system qq#ftp -a -u ftp://upload.sf.net/incoming/ "$checkout_dir".tar.gz#;
+#	call_system qq#ftp -a -u ftp://upload.sf.net/incoming/ "$checkout_dir".tar.bz2#;
 }
+
+print "Upload command reminder:\n";
+print "ftp -a -u ftp://upload.sf.net/incoming/ *.tar.*\n"
