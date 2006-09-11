@@ -1,0 +1,17 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+my $cdir;
+while (<>) {
+	if (/^cvs status: Examining (.*)$/) {
+		$cdir = $1;
+	} elsif (/^File: (.*)Status: (.*)/) {
+		my ($file, $stat) = ($1, $2);
+		next if $stat =~ /Up-to-date/;
+		$file =~ s/\s*$//;
+		$stat =~ s/\s*$//;
+		print "$cdir/$file: $stat\n";
+	}
+}
