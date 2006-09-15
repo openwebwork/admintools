@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 
+use strict;
 use warnings;
 
-$CVSROOT = ":pserver:anoncvs\@cvs.webwork.rochester.edu:/webwork/cvs/system";
+my $CVSROOT = ":pserver:anoncvs\@cvs.webwork.rochester.edu:/webwork/cvs/system";
 
 unless (@ARGV == 1) {
 	print STDERR "Usage: $0 version\n";
@@ -12,11 +13,11 @@ unless (@ARGV == 1) {
 my $vers = $ARGV[0];
 my ($maj, $min, $patch) = split /\./, $vers;
 
-$release_tag = "rel-$maj-$min-$patch";
-$branch_tag = "rel-$maj-$min-dev";
-$version_suffix = "-$vers";
+my $release_tag = "rel-$maj-$min-$patch";
+my $branch_tag = "rel-$maj-$min-dev";
+my $version_suffix = "-$vers";
 
-%modules = (
+my %modules = (
 	webwork2 => "webwork$version_suffix",
 	pg => "pg$version_suffix",
 );
@@ -26,7 +27,7 @@ sub call_system($) {
 	system $_[0];
 }
 
-foreach $module (keys %modules) {
+foreach my $module (keys %modules) {
 	my $checkout_dir = $modules{$module};
 	call_system qq#cvs -d "$CVSROOT" checkout -r "$release_tag" -d "$checkout_dir" "$module"#;
 	call_system qq#cd "$checkout_dir" && find . -regex '.*/CVS/\\(Tag\\|Entries\\)' -print0 | xargs -0 perl -pi -e 's/$release_tag\$/$branch_tag/'#;
