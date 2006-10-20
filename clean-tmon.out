@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+# 
+# This script is for use on the annoyingly-corrupted tmon.out files that 
+# Devel::DProf generates when Safe compartments are used. It escapes 
+# nonprintable characters and spurrious newlines. Run like this:
+# 
+#   clean-tmon.out < tmon.out > tmon.out.clean
+# 
+# See also: http://perlmonks.org/?node_id=579510
+# 
+
+while (<>) { print; last if /^PART2/ }
+while (<>) {
+	s/([\x00-\x09\x0b-\x15\x7f-\xff])/"<".sprintf("%02X",ord($1)).">"/eg;
+	/^[@&+\-\/*]/ or $prev =~ s/\n$/<0A>/;
+	print $prev;
+	$prev = $_;
+}
+print $prev;
