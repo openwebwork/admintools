@@ -6,8 +6,19 @@ use warnings;
 my $out;
 
 while (<>) {
+	if (/^--- \/dev\/null$/) {
+		$_ = <>;
+		if (/^\+\+\+ (.+)$/) {
+			$out .= "cvs up -j1.1 $1\n";
+		}
+		next;
+	}
 	next unless /^diff -L(.+) -L\1 -u -r([0-9.]+) -r([0-9.]+)/;
 	$out .= "cvs up -kk -j$2 -j$3 $1\n";
 }
 
-print $out;
+if (defined $out) {
+	print $out;
+} else {
+	warn "nothing found.\n";
+}
