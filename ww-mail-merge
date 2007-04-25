@@ -3,9 +3,17 @@
 use strict;
 use warnings;
 
+my $logmsg;
 my $out;
 
 while (<>) {
+	if (/^Log Message:$/) {
+		<>; # next line is underlines
+		while (<>) {
+			last if /^(Added|Modified|Deleted) Files:$/;
+			$logmsg .= $_;
+		}
+	}
 	if (/^--- \/dev\/null$/) {
 		$_ = <>;
 		if (/^\+\+\+ (.+)$/) {
@@ -17,8 +25,11 @@ while (<>) {
 	$out .= "cvs up -kk -j$2 -j$3 $1\n";
 }
 
+$logmsg =~ s/\n+$//s;
+
 if (defined $out) {
 	print $out;
+	#print "cvs ci -m 'backport (???): $logmsg'\n";
 } else {
 	warn "nothing found.\n";
 }
