@@ -63,7 +63,7 @@ sub process_pod {
 	
 	#print join(" ",
 	pod2html(
-		"--podpath=$subdirs",
+		defined $subdirs && length $subdirs ? "--podpath=$subdirs" : (),
 		"--podroot=$source_root",
 		"--htmldir=$dest_root",
 		defined $dest_url && length $dest_url ? "--htmlroot=$dest_url" : (),
