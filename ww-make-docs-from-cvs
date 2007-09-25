@@ -1,0 +1,85 @@
+#!/usr/bin/perl -sT
+################################################################################
+# WeBWorK Online Homework Delivery System
+# Copyright © 2000-2003 The WeBWorK Project, http://openwebwork.sf.net/
+# $CVSHeader: admintools/wwdocs2html,v 1.3 2006/09/08 20:16:19 sh002i Exp $
+# 
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of either: (a) the GNU General Public License as published by the
+# Free Software Foundation; either version 2, or (at your option) any later
+# version, or (b) the "Artistic License" which comes with this package.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See either the GNU General Public License or the
+# Artistic License for more details.
+################################################################################
+
+=head1 NAME
+
+ww-make-docs-from-cvs - make WeBWorK documentation from CVS viewable over the web
+
+=cut
+
+use strict;
+use warnings;
+
+$ENV{PATH} = "";
+$ENV{ENV} = "";
+
+our $CHECKOUT_DIR = '/webwork/docs2html';
+our $DOC_DIR = '/webwork/www/main/doc/cvs';
+
+our $CVS = "/usr/bin/cvs";
+our $MKDIR = "/bin/mkdir";
+our $WW_MAKE_DOCS = '/home/sam/work/admintools/ww-make-docs';
+
+our $v; # for verbose switch
+
+my @dirs;
+
+if (@ARGV) {
+	@dirs = map "$CHECKOUT_DIR/$_", @ARGV;
+} else {
+	@dirs = glob("$CHECKOUT_DIR/*");
+}
+
+foreach my $dir (@dirs) {
+	next unless -d $dir;
+	if ($dir =~ m/^([^\!\$\^\&\*\(\)\~\[\]\|\{\}\'\"\;\<\>\?]+)$/) {
+		print "\n-----> $dir <-----\n\n" if $v;
+		update_cvs($1);
+		process_dir($1);
+	} else {
+		warn "'$dir' insecure.\n";
+	}
+}
+
+sub update_cvs {
+	my ($dir) = @_;
+	
+	system "cd \"$dir\" && $CVS -q update -dP" and die "cvs failed: $!\n";
+}
+
+sub process_dir {
+	my ($source_dir) = @_;
+	my $dest_dir = $source_dir;
+	$dest_dir =~ s/^$CHECKOUT_DIR/$DOC_DIR/;
+	
+	system $MKDIR, '-p', $dest_dir;
+	if ($?) {
+		my $exit = $? >> 8;
+		my $signal = $? & 127;
+		my $core = $? & 128;
+		die "/bin/mkdir -p $dest_dir failed (exit=$exit signal=$signal core=$core)\n";
+	}
+	
+	system $WW_MAKE_DOCS, $source_dir, $dest_dir;
+	if ($?) {
+		my $exit = $? >> 8;
+		my $signal = $? & 127;
+		my $core = $? & 128;
+		die "$WW_MAKE_DOCS $source_dir $dest_dir failed (exit=$exit signal=$signal core=$core)\n";
+	}
+}
+
