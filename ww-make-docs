@@ -37,7 +37,7 @@ sub process_pod {
 	my $dest_root = $self->{dest_root};
 	my $dest_url = $self->{dest_url};
 	
-	my ($subdir, $filename) = $pod_path =~ m|^$source_root/(.*)/(.*)$|;
+	my ($subdir, $filename) = $pod_path =~ m|^$source_root/(?:(.*)/)?(.*)$|;
 	if ($filename =~ /\.pl$/) {
 		$filename .= '.html';
 	} elsif ($filename =~ /\.pod$/) {
@@ -45,7 +45,7 @@ sub process_pod {
 	} elsif ($filename =~ /\.pm$/) {
 		$filename =~ s/\.pm$/.html/;
 	}
-	my $html_dir = "$dest_root/$subdir";
+	my $html_dir = defined $subdir ? "$dest_root/$subdir" : $dest_root;
 	my $html_path = "$html_dir/$filename";
 	
 	#print "$pod_path -- $pod_name\n";
