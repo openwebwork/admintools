@@ -1,0 +1,95 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+package WeBWorK::Utils::HTMLDocs;
+
+use Pod::Find qw(pod_find);
+use Pod::Html;
+
+sub new {
+	my $invocant = shift;
+	my $class = ref $invocant || $invocant;
+	return bless { @_ }, $class;
+}
+
+sub convert_pods {
+	my $self = shift;
+	my $source_root = $self->{source_root};
+	my $subdirs = do {
+		my $dh;
+		opendir $dh, $source_root;
+		join ':',
+			grep { not (/^\./ or /^(CVS|.svn)$/) and -d "$source_root/$_" }
+				readdir $dh;
+	};
+	
+	my %pods = pod_find({}, $source_root);
+	while (my ($pod_path, $pod_name) = each %pods) {
+		$self->process_pod($subdirs, $pod_path, $pod_name);
+	}
+}
+
+sub process_pod {
+	my ($self, $subdirs, $pod_path, $pod_name) = @_;
+	my $source_root = $self->{source_root};
+	my $dest_root = $self->{dest_root};
+	my $dest_url = $self->{dest_url};
+	
+	my ($subdir, $filename) = $pod_path =~ m|^$source_root/(.*)/(.*)$|;
+	if ($filename =~ /\.pl$/) {
+		$filename .= '.html';
+	} elsif ($filename =~ /\.pod$/) {
+		$filename =~ s/\.pod$/.html/;
+	} elsif ($filename =~ /\.pm$/) {
+		$filename =~ s/\.pm$/.html/;
+	}
+	my $html_dir = "$dest_root/$subdir";
+	my $html_path = "$html_dir/$filename";
+	
+	#print "$pod_path -- $pod_name\n";
+	#print "    subdir=$subdir\n";
+	#print "    html_dir=$html_dir\n";
+	#print "    html_path=$html_path\n";
+	
+	system '/bin/mkdir', '-p', $html_dir;
+	if ($?) {
+		my $exit = $? >> 8;
+		my $signal = $? & 127;
+		my $core = $? & 128;
+		die "/bin/mkdir -p $html_dir failed (exit=$exit signal=$signal core=$core)\n";
+	}
+	
+	#print join(" ",
+	pod2html(
+		"--podpath=$subdirs",
+		"--podroot=$source_root",
+		"--htmldir=$dest_root",
+		defined $dest_url && length $dest_url ? "--htmlroot=$dest_url" : (),
+		"--infile=$pod_path",
+		"--outfile=$html_path",
+		'--recurse',
+		'--header',
+	);
+	#), "\n";
+	#exit;
+}
+
+package main;
+
+unless (caller) {
+	unless (@ARGV >= 2) {
+		print "usage: $0 source_root dest_root [ dest_url ]\n";
+		exit 1;
+	}
+	my $htmldocs = new WeBWorK::Utils::HTMLDocs(
+		source_root => $ARGV[0],
+		dest_root => $ARGV[1],
+		dest_url => $ARGV[2],
+	);
+	$htmldocs->convert_pods;
+}
+
+1;
+
