@@ -6,9 +6,11 @@ use warnings;
 package WeBWorK::Utils::HTMLDocs;
 
 use File::Find;
+use File::Temp qw(tempfile);
 use IO::File;
-use Pod::Find qw(pod_find simplify_name);
+use Pod::Find qw(pod_find simplify_name contains_pod);
 use Pod::Html;
+use Pod::PP;
 use POSIX qw(strftime);
 use Data::Dumper;
 
@@ -35,7 +37,6 @@ sub new {
 		section_hash => $section_hash,
 		section_order => $section_order,
 	};
-	#print Dumper($self);
 	return bless $self, $class;
 }
 
@@ -43,44 +44,71 @@ sub convert_pods {
 	my $self = shift;
 	my $source_root = $self->{source_root};
 	my $dest_root = $self->{dest_root};
-	my @subdirs = do {
+	my $subdirs = do {
 		my $dh;
 		opendir $dh, $source_root;
-		grep { not (/^\./ or /^(CVS|.svn)$/) and -d "$source_root/$_" }
-			readdir $dh;
-	}; 
-	my $subdirs = join(':', @subdirs);
+		join ':',
+			grep { not (/^\./ or /^(CVS|.svn)$/) and -d "$source_root/$_" }
+				readdir $dh;
+	};
+	$self->{subdirs} = $subdirs;
 	
-	my %pods = pod_find({}, $source_root);
-	while (my ($pod_path, $pod_name) = each %pods) {
-		$self->process_pod($subdirs, $pod_path, $pod_name);
-	}
+	find({wanted => $self->gen_pod_wanted, no_chdir => 1}, $source_root);
 	$self->write_index("$dest_root/index.html");
 }
 
+sub gen_pod_wanted {
+	my $self = shift;
+	return sub {
+		my $path = $File::Find::name;
+		my $dir = $File::Find::dir;
+		my ($name) = $path =~ m|^$dir(?:/(.*))?$|;
+		$name = '' unless defined $name;
+		
+		if ($name =~ /^\./) {
+			$File::Find::prune = 1;
+			return;
+		}
+		unless (-f $path or -d $path) {
+			$File::Find::prune = 1;
+			return;
+		}
+		if (-d _ and $name =~ /^(CVS|RCS|.svn)$/) {
+			$File::Find::prune = 1;
+			return;
+		}
+		
+		return if -d _;
+		return unless contains_pod($path);
+		$self->process_pod($path);
+	};
+}
+
 sub process_pod {
-	my ($self, $subdirs, $pod_path) = @_;
+	my ($self, $pod_path) = @_;
 	my $source_root = $self->{source_root};
 	my $dest_root = $self->{dest_root};
 	my $dest_url = $self->{dest_url};
+	my $subdirs = $self->{subdirs};
 	
 	my $pod_name;
 	
 	my ($subdir, $filename) = $pod_path =~ m|^$source_root/(?:(.*)/)?(.*)$|;
-	my $subdir_rest;
-	if (defined $subdir and $subdir =~ m|/|) {
-		($subdir_rest) = $subdir =~ m|^[^/]*/(.*)|;
+	my ($subdir_first, $subdir_rest);
+	if (defined $subdir) {
+		if ($subdir =~ m|/|) {
+			($subdir_first, $subdir_rest) = $subdir =~ m|^([^/]*)/(.*)|;
+		} else {
+			$subdir_first = $subdir;
+		}
 	}
-	if ($filename =~ /\.plx?$/ or $filename !~ /\./) {
-		$pod_name = $filename;
+	$pod_name = (defined $subdir_rest ? "$subdir_rest/" : "") . $filename;
+	if ($filename =~ /\.(plx?|pg)$/ or $filename !~ /\./) {
 		$filename .= '.html';
 	} elsif ($filename =~ /\.pod$/) {
-		$pod_name = $filename;
 		$pod_name =~ s/\.pod$//;
 		$filename =~ s/\.pod$/.html/;
 	} elsif ($filename =~ /\.pm$/) {
-		$pod_name = defined $subdir_rest ? "$subdir_rest/" : "";
-		$pod_name .= $filename;
 		$pod_name =~ s/\.pm$//;
 		$pod_name =~ s|/+|::|g;
 		$filename =~ s/\.pm$/.html/;
@@ -91,6 +119,7 @@ sub process_pod {
 	
 	#print "$pod_path - $pod_name\n";
 	$self->update_index($subdir, $html_rel_path, $pod_name);
+	#my $podpp_path = do_podpp($pod_path);
 	do_mkdir($html_dir);
 	do_pod2html(
 		subdirs => $subdirs,
@@ -100,6 +129,7 @@ sub process_pod {
 		pod_path => $pod_path,
 		html_path => $html_path,
 	);
+	#unlink $podpp_path;
 }
 
 sub update_index {
@@ -148,6 +178,18 @@ sub write_index {
 	
 	my $fh = new IO::File($out_path, 'w') or die "Failed to open index '$out_path' for writing: $!\n";
 	print $fh $header, $content_start, $content, $content_end, $footer;
+}
+
+sub do_podpp {
+	my $in_path = shift;
+	my $pp = make Pod::PP(-incpath=>[],-symbols=>{});
+	#my ($out_fh, $out_path) = tempfile('ww-make-docs-podpp.XXXXXX');
+	#local *STDOUT = $out_fh;
+	my $out_path = "$in_path.podpp";
+	local *STDOUT;
+	open STDOUT, '>', $out_path or die "can't redirect STDOUT to $out_path: $!";
+	$pp->parse_from_file($in_path);
+	return $out_path;
 }
 
 sub do_mkdir {
