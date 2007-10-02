@@ -10,7 +10,7 @@ use File::Temp qw(tempfile);
 use IO::File;
 use Pod::Find qw(pod_find simplify_name contains_pod);
 use Pod::Html;
-use Pod::PP;
+#use Pod::PP;
 use POSIX qw(strftime);
 use Data::Dumper;
 
