@@ -2,7 +2,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2003 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: admintools/ww-make-docs-from-cvs,v 1.3 2007/10/02 20:09:47 sh002i Exp $
+# $CVSHeader: admintools/ww-make-docs-from-cvs,v 1.4 2007/10/02 20:11:00 sh002i Exp $
 # 
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -35,6 +35,7 @@ our $DOC_DIR = '/webwork/www/main/doc/cvs';
 
 our $CVS = "/usr/bin/cvs";
 our $MKDIR = "/bin/mkdir";
+our $RM = "/bin/rm";
 our $WW_MAKE_DOCS = '/home/sh002i/work/admintools/ww-make-docs';
 #our $WW_MAKE_DOCS = '/home/sam/work/admintools/ww-make-docs';
 
@@ -76,6 +77,7 @@ sub process_dir {
 	my $dest_dir = $source_dir;
 	$dest_dir =~ s/^$CHECKOUT_DIR/$DOC_DIR/;
 	
+	system $RM, '-rf', $dest_dir;
 	system $MKDIR, '-p', $dest_dir;
 	if ($?) {
 		my $exit = $? >> 8;
