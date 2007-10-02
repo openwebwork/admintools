@@ -2,7 +2,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2003 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: admintools/ww-make-docs-from-cvs,v 1.1 2007/09/25 16:52:33 sh002i Exp $
+# $CVSHeader: admintools/ww-make-docs-from-cvs,v 1.2 2007/09/25 17:32:31 sh002i Exp $
 # 
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -23,20 +23,25 @@ ww-make-docs-from-cvs - make WeBWorK documentation from CVS viewable over the we
 
 use strict;
 use warnings;
+use IO::File;
 
 $ENV{PATH} = "";
 $ENV{ENV} = "";
 
 our $CHECKOUT_DIR = '/webwork/docs2html';
 our $DOC_DIR = '/webwork/www/main/doc/cvs';
+#our $CHECKOUT_DIR = '/home/sam/work/admintools/checkoutdir';
+#our $DOC_DIR = '/home/sam/work/admintools/docdir';
 
 our $CVS = "/usr/bin/cvs";
 our $MKDIR = "/bin/mkdir";
 our $WW_MAKE_DOCS = '/home/sh002i/work/admintools/ww-make-docs';
+#our $WW_MAKE_DOCS = '/home/sam/work/admintools/ww-make-docs';
 
 our $v; # for verbose switch
 
 my @dirs;
+my %index;
 
 if (@ARGV) {
 	@dirs = map "$CHECKOUT_DIR/$_", @ARGV;
@@ -48,12 +53,17 @@ foreach my $dir (@dirs) {
 	next unless -d $dir;
 	if ($dir =~ m/^([^\!\$\^\&\*\(\)\~\[\]\|\{\}\'\"\;\<\>\?]+)$/) {
 		print "\n-----> $dir <-----\n\n" if $v;
-		update_cvs($1);
-		process_dir($1);
+		#update_cvs($1);
+		#process_dir($1);
+		update_index($1);
 	} else {
 		warn "'$dir' insecure.\n";
 	}
 }
+
+my $fh = new IO::File("$DOC_DIR/index.html", 'w')
+	or die "failed to open '$DOC_DIR/index.html' for writing: $!\n";
+write_index($fh);
 
 sub update_cvs {
 	my ($dir) = @_;
@@ -83,3 +93,62 @@ sub process_dir {
 	}
 }
 
+sub update_index {
+	my $dir = shift;
+	$dir =~ s/^.*\///;
+	if ($dir =~ /^(.+)_(.+?)(?:--(.*))?$/) {
+		my ($module, $version, $extra) = ($1, $2, $3);
+		if ($version =~ /^rel-(\d+)-(\d+)(?:-(\d+))?$/) {
+			my ($major, $minor, $patch) = ($1, $2, $3);
+			if (defined $patch) {
+				$version = "$major.$minor.$patch";
+			} else {
+				$version = "$major.$minor.0";
+			}
+		} elsif ($version =~ /^rel-(\d+)-(\d)-(?:patches|dev)$/) {
+			my ($major, $minor) = ($1, $2);
+			$version = "$major.$minor.x (bugfixes)";
+		} elsif ($version eq "HEAD") {
+			$version = 'HEAD (development)';
+		} else {
+			warn "unfamiliar version string '$version' for dir '$dir' -- not adding to index.\n";
+			return;
+		}
+		$module =~ s/^pg$/PG/;
+		$module =~ s/^webwork2$/WeBWorK/;
+		if (defined $extra) {
+			$index{$module}{$version}{$extra} = $dir;
+		} else {
+			$index{$module}{$version} = $dir;
+		}
+	} else {
+		warn "unfamiliary dir format '$dir' -- not adding to index.\n";
+	}
+}
+
+sub write_index {
+	my $fh = shift;
+	print $fh "<html><head><title>WeBWorK Documentation from CVS</title></head><body>\n";
+	print $fh "<h1>WeBWorK Documentation from CVS</h1>\n";
+	print $fh "<ul>\n";
+	print $fh map { "<li><a href=\"#$_\">$_</a></li>\n" } sort keys %index;
+	print $fh "</ul>\n";
+	for my $module (sort keys %index) {
+		print $fh "<hr/>\n";
+		print $fh "<h2><a name=\"$module\">$module</a></h2>\n";
+		print $fh "<ul>\n";
+		for my $version (sort keys %{$index{$module}}) {
+			if (ref $index{$module}{$version}) {
+				print $fh "<li>$version<ul>\n";
+				for my $extra (sort keys %{$index{$module}{$version}}) {
+					print $fh "<li><a href=\"$index{$module}{$version}{$extra}\">$extra</a></li>\n";
+				}
+				print $fh "</ul></li>\n";
+			} else {
+				print $fh "<li><a href=\"$index{$module}{$version}\">$version</a></li>\n";
+			}
+		}
+		print $fh "</ul>\n";
+		print $fh "</body></html>\n";
+	}
+}
