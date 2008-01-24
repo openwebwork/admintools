@@ -2,7 +2,7 @@
 ################################################################################
 # WeBWorK Online Homework Delivery System
 # Copyright © 2000-2003 The WeBWorK Project, http://openwebwork.sf.net/
-# $CVSHeader: admintools/ww-make-docs-from-cvs,v 1.4 2007/10/02 20:11:00 sh002i Exp $
+# $CVSHeader: admintools/ww-make-docs-from-cvs,v 1.5 2007/10/02 20:27:44 sh002i Exp $
 # 
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of either: (a) the GNU General Public License as published by the
@@ -39,6 +39,8 @@ our $RM = "/bin/rm";
 our $WW_MAKE_DOCS = '/home/sh002i/work/admintools/ww-make-docs';
 #our $WW_MAKE_DOCS = '/home/sam/work/admintools/ww-make-docs';
 
+our $BASE_URL = 'http://webwork.maa.org/doc/cvs';
+
 our $v; # for verbose switch
 
 my @dirs;
@@ -62,9 +64,27 @@ foreach my $dir (@dirs) {
 	}
 }
 
-my $fh = new IO::File("$DOC_DIR/index.html", 'w')
-	or die "failed to open '$DOC_DIR/index.html' for writing: $!\n";
-write_index($fh);
+{
+	my $fh = new IO::File("$DOC_DIR/index.html", 'w')
+		or die "failed to open '$DOC_DIR/index.html' for writing: $!\n";
+	write_index_new($fh);
+	my $mode = (stat $fh)[2] & 0777 | 0111;
+	chmod $mode, $fh;
+}
+{
+	my $fh = new IO::File("$DOC_DIR/header.html", 'w')
+		or die "failed to open '$DOC_DIR/header.html' for writing: $!\n";
+	write_header($fh);
+	my $mode = (stat $fh)[2] & 0777 | 0111;
+	chmod $mode, $fh;
+}
+{
+	my $fh = new IO::File("$DOC_DIR/footer.html", 'w')
+		or die "failed to open '$DOC_DIR/footer.html' for writing: $!\n";
+	write_footer($fh);
+	my $mode = (stat $fh)[2] & 0777 | 0111;
+	chmod $mode, $fh;
+}
 
 sub update_cvs {
 	my ($dir) = @_;
@@ -86,7 +106,7 @@ sub process_dir {
 		die "/bin/mkdir -p $dest_dir failed (exit=$exit signal=$signal core=$core)\n";
 	}
 	
-	system $WW_MAKE_DOCS, $source_dir, $dest_dir;
+	system $WW_MAKE_DOCS, $source_dir, $dest_dir;#, $BASE_URL;
 	if ($?) {
 		my $exit = $? >> 8;
 		my $signal = $? & 127;
@@ -124,7 +144,7 @@ sub update_index {
 			$index{$module}{$version} = $dir;
 		}
 	} else {
-		warn "unfamiliary dir format '$dir' -- not adding to index.\n";
+		warn "unfamiliar dir format '$dir' -- not adding to index.\n";
 	}
 }
 
@@ -153,4 +173,110 @@ sub write_index {
 		print $fh "</ul>\n";
 		print $fh "</body></html>\n";
 	}
+}
+
+sub write_index_new {
+	my $fh = shift;
+	print $fh <<'EOF';
+<!--#set var="title" value="Main Menu" -->
+<!--#include virtual="/doc/cvs/header.html" -->
+<p>Chose a product and version from the menu to the left.</p>
+<!--#include virtual="/doc/cvs/footer.html" -->
+EOF
+}
+
+sub write_header {
+	my $fh = shift;
+	print $fh <<'EOF';
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+ <head>
+  <!-- <base href="http://webwork.maa.org/" /> -->
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <!--#if expr="$title" -->
+  <title><!--#echo var="title" --> - WeBWorKDocs</title>
+  <!--#else -->
+  <title>WeBWorKDocs</title>
+  <!--#endif -->
+  <style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "/wiki/skins/monobook/main.css?42b"; /*]]>*/</style>
+  <link rel="stylesheet" type="text/css" media="print" href="/wiki/skins/common/commonPrint.css?42b" />
+  <link rel="stylesheet" type="text/css" media="handheld" href="/wiki/skins/monobook/handheld.css?42b" />
+  <!--[if lt IE 5.5000]><style type="text/css">@import "/wiki/skins/monobook/IE50Fixes.css?42b";</style><![endif]-->
+  <!--[if IE 5.5000]><style type="text/css">@import "/wiki/skins/monobook/IE55Fixes.css?42b";</style><![endif]-->
+  <!--[if IE 6]><style type="text/css">@import "/wiki/skins/monobook/IE60Fixes.css?42b";</style><![endif]-->
+  <!--[if IE 7]><style type="text/css">@import "/wiki/skins/monobook/IE70Fixes.css?42b";</style><![endif]-->
+  <!--[if lt IE 7]><script type="text/javascript" src="/wiki/skins/common/IEFixes.js?42b"></script>
+  <meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+ </head>
+ <body class="mediawiki ns-0 ltr page-Main_Page">
+  <div id="globalWrapper">
+   <div id="column-content">
+	<div id="content">
+     <a name="top" id="top"></a>
+     <!--#if expr="$title" -->
+     <h1 class="firstHeading"><!--#echo var="title" --></h1>
+     <!--#endif -->
+     <div id="bodyContent">
+      <h3 id="siteSub">From WeBWorK</h3>
+      <div id="contentSub"></div>
+      <div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a></div>
+	  <!-- <base href="http://devel.webwork.rochester.edu/doc/cvs/" /> -->
+      <!-- start content -->
+EOF
+}
+
+sub write_footer {
+	my $fh = shift;
+	print $fh <<'EOF';
+      <!-- end content -->
+	  <!-- <base href="http://webwork.maa.org/" /> -->
+      <div class="visualClear"></div>
+     </div>
+	</div>
+   </div>
+   <div id="column-one">
+	<div class="portlet" id="p-logo">
+     <a style="background-image: url(/webwork2_files/images/webwork_square.png);" href="/wiki/Main_Page" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+	<div class='portlet' id='p-navigation-$module'>
+	 <h5>Navigation</h5>
+	 <div class='pBody'>
+	  <ul>
+	   <li><a href="/doc/cvs/">CVS Docs Home</a></li>
+	   <li><a href="/wiki/Main_Page">WeBWorK Wiki</a></li>
+	   <li><a href="/">WeBWorK Home</a></li>
+	  </ul>
+	 </div>
+	</div>
+EOF
+	for my $module (sort keys %index) {
+		print $fh "<div class='portlet' id='p-navigation-$module'>\n";
+		print $fh "<h5>$module</h5>\n";
+		print $fh "<div class='pBody'>\n";
+		print $fh "<ul>\n";
+		for my $version (reverse sort keys %{$index{$module}}) {
+			if (ref $index{$module}{$version}) {
+				print $fh "<li>$version<ul>\n";
+				for my $extra (sort keys %{$index{$module}{$version}}) {
+					print $fh "<li><a href=\"$BASE_URL/$index{$module}{$version}{$extra}\">$extra</a></li>\n";
+				}
+				print $fh "</ul></li>\n";
+			} else {
+				print $fh "<li><a href=\"$BASE_URL/$index{$module}{$version}\">$version</a></li>\n";
+			}
+		}
+		print $fh "</ul>\n";
+		print $fh "</div></div>\n";
+	}
+	print $fh <<'EOF';
+   </div><!-- end of the left (by default at least) column -->
+   <div class="visualClear"></div>
+   <script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+  </div>
+ </body>
+</html>
+
+EOF
 }
