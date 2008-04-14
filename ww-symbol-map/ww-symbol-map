@@ -1,0 +1,294 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Encode;
+use File::Find;
+use IO::File;
+use Data::Dumper;
+
+our $POD_PREFIX = "http://webwork.maa.org/doc/cvs/pg_CURRENT";
+
+=head1 NAME
+
+ww-symbol-map - generate symbol maps from embedded documentation.
+
+=head1 SYNOPSIS
+
+ ww-symbol-map path/to/pg > pg_symbols.html
+
+=head1 DESCRIPTION
+
+This script is designed to scan PG macro files for documentation strings  that
+note where variables and functions are declared and used. It then outputs an
+HTML which describes the uses/used-by relationships among symbols. This will be
+useful in determining dependencies within PG when cleaning up the language.
+Documentation strings are of the form:
+
+ # ^key value 
+
+Any number of comment characters in a row are supported, and there may be any
+amount of whitespace on either side of the comment character(s) as well as
+between the key and the value.
+
+=head1 EXAMPLE
+
+ # ^package Foo::Bar
+ package Foo::Bar;
+ 
+ # ^variable @hello
+ my @hello;
+ 
+ # ^function foo
+ # ^uses @hello
+ sub foo {
+     push @hello, @_;
+ }
+
+=cut
+
+my $basedir = shift;
+$basedir =~ s|/+$||;
+
+my %names;
+my %files;
+
+find({wanted=>\&scan_files, no_chdir=>1}, $basedir);
+
+#print Data::Dumper->Dump([\%names], [qw(names)]);
+
+report();
+
+################################################################################
+
+sub scan_files {
+	Encode::_utf8_on($File::Find::name);
+	if ($File::Find::name =~ /\/(?:\.*|CVS)$/ and -d $File::Find::name) {
+		$File::Find::prune = 1;
+		return;
+	}
+	return unless -f $File::Find::name;
+	process_file($File::Find::name);
+}
+
+sub process_file {
+	my ($file) = @_;
+	my ($relpath) = $file =~ m|^$basedir/(.*)$|;
+	#warn "$relpath\n";
+	
+	my $fh = new IO::File;
+	$fh->open($file, 'r') or die "$file: $!\n";
+	
+	my $curr_package = "main";
+	my $curr_function;
+	
+	while (1) {
+		my $line = $fh->getline;
+		my $lineno = $fh->input_line_number;
+		return if not defined $line;
+		
+		chomp $line;
+		#warn "$lineno\t$line\n";
+		if (my ($directive, $rest) = $line =~ /^\s*#+\s*\^(\w+)\s+(.*?)\s*$/) {
+			warn "$relpath:$lineno: $directive - $rest\n";
+			my $type = $directive;
+			$type = 'name' if $type =~ /^(?:variable|function)$/;
+			
+			if ($type eq 'package') {
+				$curr_package = $rest;
+			
+			} elsif ($type eq 'uses') {
+				my $name = qualify($rest, $curr_package);
+				if (defined $curr_function) {
+					push @{$names{$name}{used_by}}, $curr_function;
+					push @{$names{$curr_function}{uses}}, $name;
+				} else {
+					warn "$relpath:$lineno: ^uses before ^function\n";
+				}
+			
+			} elsif ($type eq 'name') {
+				my $name = qualify($rest, $curr_package);
+				if (exists $names{$name}{file}) {
+					warn sprintf "$relpath:$lineno: $name already declared at %s:%s\n",
+						$names{$name}{file}, $names{$name}{line};
+				} else {
+					$names{$name}{file} = $relpath;
+					$names{$name}{line} = $lineno;
+					my $sigil = substr($name, 0, 1);
+					$files{$relpath}{$sigil}{$name} = $lineno;
+				}
+				if ($name =~ /^&/) {
+					$curr_function = $name;#if $name =~ /^&/;
+				}
+				
+			} else {
+				warn "$relpath:$lineno: unknown directive ^$directive\n";
+				
+			}
+		}
+	}
+}
+
+sub qualify {
+	my ($var, $pkg) = @_;
+	return $var if $var =~ /::/;
+	my ($sigil, $name) = $var =~ /^([\@\$\%\&\*]?)(.*)$/;
+	$sigil = '&' if not length($sigil);
+	return $sigil . $pkg . '::' . $name;
+}
+
+################################################################################
+
+sub report {
+	my %o = %{shift()} if ref $_[0];
+	
+	print <<EOF;
+<html>
+<head>
+<title>Symbol map for $basedir</title>
+<style type="text/css">
+dt.name { font-weight: bold; }
+dt.name_property { font-style: italic; }
+.file { border-bottom:1px solid black; }
+
+</style>
+</head>
+<body>
+<h1>Symbol map for $basedir</h1>
+
+EOF
+	
+	my @files = sort keys %files;
+	report_toc(@files);
+	foreach my $file (@files) {
+		report_file($file);
+	}
+}
+
+sub report_toc {
+	my (@files) = @_;
+	print "<ul class=\"toc\">\n";
+	foreach my $file (@files) {
+		my $anchor = anchor_name($file);
+		print "<li class=\"toc_item\"><a href=\"#$anchor\">$file</a></li>\n";
+	}
+	print "</ul>\n";
+}
+
+sub report_file {
+	my %o = %{shift()} if ref $_[0];
+	my ($file) = @_;
+	my $anchor = anchor_name($file);
+	print <<EOF;
+<h2 class="file"><a name="$anchor" href="$POD_PREFIX/$file">$file</a></h2>
+EOF
+	
+	my @vars = map { keys %{$files{$file}{$_}} } '$', '@', '%';
+	my @funcs = keys %{$files{$file}{'&'}};
+	report_section({file_name=>$file,section_name=>'Variables'}, @vars);
+	report_section({file_name=>$file,section_name=>'Functions'}, @funcs);
+}
+
+sub report_section {
+	my %o = %{shift()} if ref $_[0];
+	my @names = @_;
+	my $anchor = anchor_name("$o{file_name}:$o{section_name}");
+	print <<EOF;
+<a name="$anchor"><h3 class="section">$o{section_name}</h3></a>
+<dl class="names">
+EOF
+	
+	@names = sort { substr($a,1) cmp substr($b,1) } @names;
+	foreach my $name (@names) {
+		report_name($name);
+	}
+	
+	print <<EOF;
+</dl>
+EOF
+}
+
+sub report_name {
+	my %o = %{shift()} if ref $_[0];
+	my ($name) = @_;
+	
+	my $short_name = no_main($name);
+	my $anchor = anchor_name($name);
+	my @uses = get_uses_html($name);
+	my @used_by = get_used_by_html($name);
+	
+	local $" = ", ";
+	print <<EOF;
+<a name="$anchor"><dt class="name">$short_name</dt></a>
+<dd>
+ <dl class="name_properties">
+EOF
+	@uses and print <<EOF;
+  <dt class="name_property">Uses</dt>
+  <dd class="name_property">@uses</dd>
+EOF
+	@used_by and print <<EOF;
+  <dt class="name_property">Used by</dt>
+  <dd class="name_property">@used_by</dd>
+EOF
+	print <<EOF;
+ </dl>
+</dd>
+EOF
+}
+
+sub get_uses_html {
+	my ($name) = @_;
+	return unless exists $names{$name}{uses};
+	
+	my @uses;
+	foreach my $curr (@{$names{$name}{uses}}) {
+		my $short_curr = no_main($curr);
+		my $anchor = anchor_name($curr);
+		push @uses, "<a href=\"#$anchor\">$short_curr</a>";
+	}
+	return @uses;
+}
+
+sub get_used_by_html {
+	my ($name) = @_;
+	return unless exists $names{$name}{used_by};
+	
+	my @used_by;
+	foreach my $curr (@{$names{$name}{used_by}}) {
+		my $short_curr = no_main($curr);
+		my $anchor = anchor_name($curr);
+		push @used_by, "<a href=\"#$anchor\">$short_curr</a>";
+	}
+	return @used_by;
+}
+
+sub no_main {
+	my ($name) = @_;
+	if ($name =~ /^(.)main::([^\:]+)$/) {
+		return "$1$2";
+	} else {
+		return $name;
+	}
+}
+
+sub anchor_name {
+	my ($string) = @_;
+	my ($sigil, $rest) = (substr($string,0,1), substr($string,1));
+	$sigil = ($sigil eq '$' ? 's'
+		: ($sigil eq '@' ? 'a'
+		: ($sigil eq '%' ? 'h'
+		: ($sigil eq '&' ? 'f'
+		: ''))));
+	$rest =~ s/([^A-Za-z0-9_])/sprintf(".%02X",ord($1))/ge;
+	return "$sigil$rest";
+}
+
+sub relpath {
+	my ($src, $dest) = @_;
+	return File::Spec->abs2rel(
+		File::Spec->rel2abs($src),
+		(File::Spec->splitpath(File::Spec->rel2abs($dest)))[1]
+	);
+}
