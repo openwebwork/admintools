@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-my $logmsg;
+#my $logmsg;
 my $out;
 
 while (<>) {
@@ -11,7 +11,7 @@ while (<>) {
 		<>; # next line is underlines
 		while (<>) {
 			last if /^(Added|Modified|Deleted) Files:$/;
-			$logmsg .= $_;
+			#$logmsg .= $_;
 		}
 	}
 	if (/^--- \/dev\/null$/) {
@@ -25,7 +25,7 @@ while (<>) {
 	$out .= "cvs up -kk -j$2 -j$3 $1\n";
 }
 
-$logmsg =~ s/\n+$//s;
+#$logmsg =~ s/\n+$//s;
 
 if (defined $out) {
 	print $out;
