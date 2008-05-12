@@ -1,0 +1,82 @@
+body {
+	background: #fff;
+	color: black;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+a:link {
+	color: #039;
+	text-decoration: none;
+}
+a:visited {
+	color: #903;
+	text-decoration: none;
+}
+a:hover {
+	background-color: #FFA;
+}
+
+h1,h2,h3,h4,h5,h6 { margin: 0 }
+
+h1 {
+	font-size: 197%; /* 26px */
+	text-align: center;
+	margin-top: 0.5em;
+}
+h2 {
+	font-size: 182%; /* 24px */
+}
+h3 {
+	font-size: 161.6%; /* 21px */
+}
+h4 {
+	font-size: 123.1%; /* 16px */
+}
+
+.file {
+	padding-top: 1em;
+	padding-bottom: 1em;
+	border-top: 1px solid black;
+}
+.file-title {
+	margin-bottom: 1em;
+}
+.file-content {
+	margin-left: 1em;
+}
+
+.file-section-title {
+	margin-bottom: 1em;
+}
+.file-section-content {
+	margin-left: 2em;
+	margin-bottom: 1em;
+}
+
+.name-title {
+	margin-top: 0.25em;
+	margin-bottom: 0.25em;
+	font-family: monospace;
+}
+
+.props {
+	margin-left: 2em;
+	margin-bottom: 0;
+}
+
+.props-uses,.props-usedby {
+	vertical-align: top;
+}
+.props-uses {
+	
+}
+.props-usedby {
+	
+}
+
+.name-ref {
+	font-family: monospace;
+}
+.name-type-unknown {
+	color: #d00;
+}
