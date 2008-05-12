@@ -21,7 +21,7 @@ h1,h2,h3,h4,h5,h6 { margin: 0 }
 h1 {
 	font-size: 197%; /* 26px */
 	text-align: center;
-	margin-top: 0.5em;
+	margin: 0.5em;
 }
 h2 {
 	font-size: 182%; /* 24px */
@@ -33,7 +33,7 @@ h4 {
 	font-size: 123.1%; /* 16px */
 }
 
-.file {
+.toc,.file {
 	padding-top: 1em;
 	padding-bottom: 1em;
 	border-top: 1px solid black;
