@@ -5,8 +5,10 @@ use warnings;
 
 use Encode;
 use File::Find;
+use File::Path;
 use IO::File;
-use Data::Dumper;
+use Data::Dumper; $Data::Dumper::Indent = 1;
+use HTML::Entities;
 
 our $POD_PREFIX = "http://webwork.maa.org/doc/cvs/pg_CURRENT";
 
@@ -26,7 +28,7 @@ HTML which describes the uses/used-by relationships among symbols. This will be
 useful in determining dependencies within PG when cleaning up the language.
 Documentation strings are of the form:
 
- # ^key value 
+ # ^key values...
 
 Any number of comment characters in a row are supported, and there may be any
 amount of whitespace on either side of the comment character(s) as well as
@@ -37,8 +39,12 @@ between the key and the value.
  # ^package Foo::Bar
  package Foo::Bar;
  
- # ^variable @hello
+ # ^variable my @hello
  my @hello;
+ # ^variable @test1
+ our @test1;
+ # ^variable our @test2
+ our @test2;
  
  # ^function foo
  # ^uses @hello
@@ -48,34 +54,173 @@ between the key and the value.
 
 =cut
 
-my $basedir = shift;
-$basedir =~ s|/+$||;
+################################################################################
 
-my %names;
-my %files;
+my %names_pkg;
+my %files_pkg;
+my %names_lex;
+
+sub add_pkgvar {
+	my ($name, $file, $lineno, $curr_package) = @_;
+	$name = qualify($name, $curr_package);
+	my $pkgvar = get_pkgvar($name);
+	if (exists $pkgvar->{file}) {
+		warn sprintf "$file:$lineno: pkgvar $name already declared at %s:%s\n",
+			$pkgvar->{file}, $pkgvar->{line};
+		return '';
+	} else {
+		$names_pkg{$name}{file} = $file;
+		$names_pkg{$name}{line} = $lineno;
+		my $sigil = sigil($name);
+		$files_pkg{$file}{$sigil}{$name} = $lineno if $sigil;
+		return 1;
+	}
+}
+
+sub add_lexical {
+	my ($name, $file, $lineno, $curr_scope) = @_;
+	defined $curr_scope and die "\$curr_scope not yet implemented";
+	my $lexical = get_lexical($file, $name);
+	if ($lexical->{line}) {
+		warn sprintf "$file:$lineno: lexical $name already declared at %s:%s\n",
+			$file, $lexical->{line};
+		return '';
+	} else {
+		$names_lex{$file}{$name}{line} = $lineno;
+		return 1;
+	}
+}
+
+sub pkgvar_usedby {
+	my ($name, $file, $curr_function) = @_;
+	if (defined $curr_function) {
+		push @{$names_pkg{$name}{used_by}}, $curr_function;
+		push @{$names_pkg{$curr_function}{uses}}, $name;
+	} else {
+		push @{$names_pkg{$name}{used_by}}, $file;
+		push @{$names_pkg{$file}{uses}}, $name;
+		$files_pkg{$file} = () unless exists $files_pkg{$file};
+	}
+}
+
+sub lexical_usedby {
+	my ($name, $file, $curr_function) = @_;
+	if (defined $curr_function) {
+		push @{$names_lex{$file}{$name}{used_by}}, $curr_function;
+		push @{$names_pkg{$curr_function}{uses}}, $name;
+	} else {
+		push @{$names_lex{$file}{$name}{used_by}}, $file;
+		push @{$names_pkg{$file}{uses}}, $name;
+	}
+}
+
+sub get_pkgvar {
+	my ($name) = @_;
+	if (exists ($names_pkg{$name})) {
+		return {
+			type => 'our',
+			name => $name,
+			%{$names_pkg{$name}},
+		};
+	} else {
+		return;
+	}
+}
+
+sub get_lexical {
+	my ($file, $name) = @_;
+	if (exists $names_lex{$file}{$name}) {
+		return {
+			type => 'my',
+			name => $name,
+			file => $file,
+			%{$names_lex{$file}{$name}},
+		};
+	} else {
+		return;
+	}
+}
+
+sub sigil {
+	my ($name) = @_;
+	my $sigil = substr($name,0,1);
+	return $sigil if $sigil =~ /^[\$\@\%\&\*]/;
+}
+
+sub split_name {
+	my ($name) = @_;
+	my $sigil = sigil($name);
+	if ($sigil) {
+		return ($sigil, substr($name,1));
+	} else {
+		return (undef, $name);
+	}
+}
+
+sub add_function_sigil {
+	my ($name) = @_;
+	$name = "\&$name" unless sigil($name);
+	return $name;
+}
+
+sub qualify {
+	my ($var, $pkg) = @_;
+	my ($sigil, $rest) = split_name($var);
+	return $var unless $sigil; # could be a file name
+	return $var if $var =~ /::/; # already fully qualified
+	return "$sigil${pkg}::$rest";
+}
+
+sub resolve {
+	my ($name, $file, $curr_package) = @_;
+	if (sigil($name)) {
+		if (my $lexical = defined $file && get_lexical($file, $name)) {
+			return 'lex', $name, $lexical;
+		} else {
+			$name = qualify($name, $curr_package);
+			if (my $pkgvar = get_pkgvar($name)) {
+				return 'sym', $name, $pkgvar;
+			} else {
+				return 'sym', $name; # not declared yet
+			}
+		}
+	} else {
+		return 'file', $name, get_pkgvar($name);
+	}
+	return;
+}
+
+################################################################################
+
+sub debug { print STDERR "@_" }
+
+my $basedir = shift;
+$basedir =~ s/\/+$//;
 
 find({wanted=>\&scan_files, no_chdir=>1}, $basedir);
 
-#print Data::Dumper->Dump([\%names], [qw(names)]);
+debug "\nEnd of parse phase.\nBeginning of report phase.\n\n";
 
+#print Data::Dumper->Dump([\%names_pkg, \%files_pkg, \%names_lex],
+#	[qw(names_pkg files_pkg names_lex)]);
 report();
 
 ################################################################################
 
 sub scan_files {
 	Encode::_utf8_on($File::Find::name);
-	if ($File::Find::name =~ /\/(?:\.*|CVS)$/ and -d $File::Find::name) {
+	if ($File::Find::name =~ /\/(?:\.[^\/]*|CVS)$/ and -d $File::Find::name) {
 		$File::Find::prune = 1;
 		return;
 	}
 	return unless -f $File::Find::name;
+	return if $File::Find::name =~ /\/\.[^\/]*$/;
 	process_file($File::Find::name);
 }
 
 sub process_file {
 	my ($file) = @_;
 	my ($relpath) = $file =~ m|^$basedir/(.*)$|;
-	#warn "$relpath\n";
 	
 	my $fh = new IO::File;
 	$fh->open($file, 'r') or die "$file: $!\n";
@@ -83,59 +228,73 @@ sub process_file {
 	my $curr_package = "main";
 	my $curr_function;
 	
+	debug "Adding file $relpath as pkgvar in package $curr_package\n";
+	add_pkgvar($relpath, $relpath, 0, $curr_package);
+	
 	while (1) {
 		my $line = $fh->getline;
 		my $lineno = $fh->input_line_number;
 		return if not defined $line;
 		
 		chomp $line;
-		#warn "$lineno\t$line\n";
 		if (my ($directive, $rest) = $line =~ /^\s*#+\s*\^(\w+)\s+(.*?)\s*$/) {
-			warn "$relpath:$lineno: $directive - $rest\n";
+			#warn "$relpath:$lineno: $line\n";
+			#warn "$relpath:$lineno: $directive - $rest\n";
 			my $type = $directive;
-			$type = 'name' if $type =~ /^(?:variable|function)$/;
 			
 			if ($type eq 'package') {
+				debug "Setting current package to $rest\n";
 				$curr_package = $rest;
-			
+				
+			} elsif ($type eq 'variable') {
+				my ($scope_rule, $name) = split /\s+/, $rest;
+				if (not defined $name) {
+					$name = $scope_rule;
+					$scope_rule = 'our';
+					warn "$relpath:$lineno: Implicit 'our' for variable $name\n";
+				}
+				$name = add_function_sigil($name);
+				if ($scope_rule eq 'our') {
+					debug "Adding pkgvar $name in package $curr_package\n";
+					add_pkgvar($name, $relpath, $lineno, $curr_package);
+				} elsif ($scope_rule eq 'my') {
+					debug "Adding lexical $name in file $relpath\n";
+					add_lexical($name, $relpath, $lineno);
+				} else {
+					warn "$relpath:$lineno: Unknown scoping rule '$scope_rule'\n";
+				}
+				
+			} elsif ($type eq 'function') {
+				$rest = add_function_sigil($rest);
+				add_pkgvar($rest, $relpath, $lineno, $curr_package);
+				# would like to not have to call qualify twice...
+				$curr_function = qualify($rest, $curr_package);
+				
 			} elsif ($type eq 'uses') {
-				my $name = qualify($rest, $curr_package);
-				if (defined $curr_function) {
-					push @{$names{$name}{used_by}}, $curr_function;
-					push @{$names{$curr_function}{uses}}, $name;
-				} else {
-					warn "$relpath:$lineno: ^uses before ^function\n";
-				}
-			
-			} elsif ($type eq 'name') {
-				my $name = qualify($rest, $curr_package);
-				if (exists $names{$name}{file}) {
-					warn sprintf "$relpath:$lineno: $name already declared at %s:%s\n",
-						$names{$name}{file}, $names{$name}{line};
-				} else {
-					$names{$name}{file} = $relpath;
-					$names{$name}{line} = $lineno;
-					my $sigil = substr($name, 0, 1);
-					$files{$relpath}{$sigil}{$name} = $lineno;
-				}
-				if ($name =~ /^&/) {
-					$curr_function = $name;#if $name =~ /^&/;
+				$rest = add_function_sigil($rest);
+				my ($sym_or_lex, $name) = resolve($rest, $relpath, $curr_package);
+				if ($sym_or_lex eq 'sym') {
+					if (defined $curr_function) {
+						#debug "pkgvar_usedby($name, $relpath, $curr_function)\n";
+					} else {
+						#debug "pkgvar_usedby($name, $relpath, ##UNDEF##)\n";
+					}
+					pkgvar_usedby($name, $relpath, $curr_function);
+				} elsif ($sym_or_lex eq 'lex') {
+					#debug "lexical_usedby($name, $relpath, $curr_function)\n";
+					lexical_usedby($name, $relpath, $curr_function);
 				}
 				
 			} else {
 				warn "$relpath:$lineno: unknown directive ^$directive\n";
 				
 			}
+		} else {
+			# non-directive lines clear out the current function
+			# so we can do file-body ^uses
+			$curr_function = undef;
 		}
 	}
-}
-
-sub qualify {
-	my ($var, $pkg) = @_;
-	return $var if $var =~ /::/;
-	my ($sigil, $name) = $var =~ /^([\@\$\%\&\*]?)(.*)$/;
-	$sigil = '&' if not length($sigil);
-	return $sigil . $pkg . '::' . $name;
 }
 
 ################################################################################
@@ -143,145 +302,256 @@ sub qualify {
 sub report {
 	my %o = %{shift()} if ref $_[0];
 	
+	my @files = sort keys %files_pkg;
+	
 	print <<EOF;
-<html>
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+ "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <title>Symbol map for $basedir</title>
-<style type="text/css">
-dt.name { font-weight: bold; }
-dt.name_property { font-style: italic; }
-.file { border-bottom:1px solid black; }
-
-</style>
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.5.1/build/reset-fonts-grids/reset-fonts-grids.css"/>
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.5.1/build/base/base-min.css"/>
+<link rel="stylesheet" type="text/css" href="ww-symbol-map.css"/>
 </head>
 <body>
-<h1>Symbol map for $basedir</h1>
-
+ <div id="doc3">
+  <div id="hd">
+   <h1>Symbol map for $basedir</h1>
 EOF
 	
-	my @files = sort keys %files;
 	report_toc(@files);
+	
+	print <<EOF;
+  </div>
+  <div id="bd">
+   <div id="yui-main">
+    <div class="yui-b">
+     
+EOF
+	
 	foreach my $file (@files) {
 		report_file($file);
 	}
+	
+	print <<EOF;
+     
+    </div>
+   </div> 
+  </div>
+  <div id="ft">
+   <div class="yui-b"></div>
+  </div>
+ </div>
+</body>
+</html>
+EOF
 }
 
 sub report_toc {
 	my (@files) = @_;
-	print "<ul class=\"toc\">\n";
+	print "<div class='toc'><div class='toc-title'>\n";
+	print "<h2>Table of Contents</h2>\n";
+	print "</div><div class='toc-content'><ul>\n";
 	foreach my $file (@files) {
 		my $anchor = anchor_name($file);
-		print "<li class=\"toc_item\"><a href=\"#$anchor\">$file</a></li>\n";
+		print "<li class='toc_item'><a href='#$anchor'>$file</a></li>\n";
 	}
-	print "</ul>\n";
+	print "</ul></div></div>\n";
 }
 
 sub report_file {
 	my %o = %{shift()} if ref $_[0];
 	my ($file) = @_;
 	my $anchor = anchor_name($file);
-	print <<EOF;
-<h2 class="file"><a name="$anchor" href="$POD_PREFIX/$file">$file</a></h2>
-EOF
+	print "<div class='file'><div class='file-title'>\n";
+	print "<h2><a id='$anchor' href='$POD_PREFIX/$file'>$file</a></h2>\n";
+	print "</div><div class='file-content'>\n";
 	
-	my @vars = map { keys %{$files{$file}{$_}} } '$', '@', '%';
-	my @funcs = keys %{$files{$file}{'&'}};
-	report_section({file_name=>$file,section_name=>'Variables'}, @vars);
+	my @lexicals = sort keys %{$names_lex{$file}};
+	my @vars = sort map { keys %{$files_pkg{$file}{$_}} } '$', '@', '%';
+	my @funcs = sort keys %{$files_pkg{$file}{'&'}};
+	
+	my $file_info = get_pkgvar($file);
+	if (exists $file_info->{uses} and @{$file_info->{uses}}) {
+		report_section({file_name=>$file,section_name=>'File Body',hide_name=>1}, $file);
+	}
+	report_section({file_name=>$file,section_name=>'Package Variables'}, @vars);
+	report_section({file_name=>$file,section_name=>'File Lexicals'}, @lexicals);
 	report_section({file_name=>$file,section_name=>'Functions'}, @funcs);
+	
+	print "</div></div>\n";
 }
 
 sub report_section {
 	my %o = %{shift()} if ref $_[0];
 	my @names = @_;
+	
+	return unless @names;
+	
 	my $anchor = anchor_name("$o{file_name}:$o{section_name}");
-	print <<EOF;
-<a name="$anchor"><h3 class="section">$o{section_name}</h3></a>
-<dl class="names">
-EOF
+	print "<div class='file-section'><div class='file-section-title'>\n";
+	print "<h3><a id='$anchor'>$o{section_name}</a></h3>\n";
+	print "</div><div class='file-section-content'>\n";
 	
 	@names = sort { substr($a,1) cmp substr($b,1) } @names;
 	foreach my $name (@names) {
-		report_name($name);
+		print report_name({%o}, $name);
 	}
 	
-	print <<EOF;
-</dl>
-EOF
+	print "</div></div>\n";
 }
 
 sub report_name {
 	my %o = %{shift()} if ref $_[0];
 	my ($name) = @_;
+	debug "Report: $o{file_name}:$name\n";
 	
-	my $short_name = no_main($name);
-	my $anchor = anchor_name($name);
-	my @uses = get_uses_html($name);
-	my @used_by = get_used_by_html($name);
+	my $info = ( resolve($name, $o{file_name}) )[2];
+	my $info_dump = Data::Dumper->Dump([$info],['info']);
+	$info_dump =~ s/^/\t/mg;
+	debug $info_dump;
 	
-	local $" = ", ";
-	print <<EOF;
-<a name="$anchor"><dt class="name">$short_name</dt></a>
-<dd>
- <dl class="name_properties">
-EOF
-	@uses and print <<EOF;
-  <dt class="name_property">Uses</dt>
-  <dd class="name_property">@uses</dd>
-EOF
-	@used_by and print <<EOF;
-  <dt class="name_property">Used by</dt>
-  <dd class="name_property">@used_by</dd>
-EOF
-	print <<EOF;
- </dl>
-</dd>
-EOF
+	my $short_name = pretty_name($name);
+	my $anchor = smart_anchor_name($info);
+	debug "\tpretty name is $short_name\n";
+	debug "\tanchor name is $anchor\n";
+	
+	my @uses = get_uses_html($info);
+	my @used_by = get_used_by_html($info);
+	
+	my $result;
+	
+	$result .= "<div class='name'><div class='name-title'>\n";
+	$result .= "<h4><a id='$anchor'>$short_name</a></h4>\n" unless $o{hide_name};
+	$result .= "</div><div class='name-content'>\n";
+	
+    if (@uses or @used_by) {
+		$result .= "<table class='props'>\n";
+		local $" = ", ";
+		if (@uses) {
+			$result .= "<tr class='props-uses'>\n";
+			$result .= "<th>Uses:</th>\n";
+			$result .= "<td>@uses</td>\n";
+			$result .= "</tr>\n";
+		}
+		if (@used_by) {
+			$result .= "<tr class='props-usedby'>\n";
+			$result .= "<th>Used by:</th>\n";
+			$result .= "<td>@used_by</td>\n";
+			$result .= "</tr>\n";
+		}
+		$result .= "</table>\n";
+	}
+	
+	$result .= "</div></div>\n";
+	
+	return $result;
 }
 
 sub get_uses_html {
-	my ($name) = @_;
-	return unless exists $names{$name}{uses};
+	my ($name_info) = @_;
+	my $name = $name_info->{name};
+	return unless exists $name_info->{uses};
 	
 	my @uses;
-	foreach my $curr (@{$names{$name}{uses}}) {
-		my $short_curr = no_main($curr);
-		my $anchor = anchor_name($curr);
-		push @uses, "<a href=\"#$anchor\">$short_curr</a>";
+	foreach my $curr (@{$name_info->{uses}}) {
+		debug "\t=> uses $curr\n";
+		
+		my $short_curr = pretty_name($curr);
+		debug "\t\tpretty name is $short_curr\n";
+		
+		(undef, undef, my $curr_info) = resolve($curr, $name_info->{file});
+		my $curr_info_dump = Data::Dumper->Dump([$curr_info],['curr_info']);
+		$curr_info_dump =~ s/^/\t\t/mg;
+		debug $curr_info_dump;
+		
+		if (defined $curr_info and exists $curr_info->{file}) {
+			debug "\t\tdefinition found for $curr\n";
+			
+			my $anchor = smart_anchor_name($curr_info);
+			debug "\t\tanchor name is $anchor\n";
+			
+			my $tip = encode_entities($curr_info->{file}.' line '.$curr_info->{line});
+			push @uses, "<span class='name-ref name-type-$curr_info->{type}'>"
+				."<a href='#$anchor' title='$tip'>$short_curr</a>"
+				."</span>";
+		} else {
+			debug "\t\tno definition found for $curr\n";
+			push @uses, "<span class='name-ref name-type-unknown'>$short_curr</span>";
+		}
 	}
 	return @uses;
 }
 
 sub get_used_by_html {
-	my ($name) = @_;
-	return unless exists $names{$name}{used_by};
+	my ($name_info) = @_;
+	my $name = $name_info->{name};
+	return unless exists $name_info->{used_by};
 	
 	my @used_by;
-	foreach my $curr (@{$names{$name}{used_by}}) {
-		my $short_curr = no_main($curr);
+	foreach my $curr (@{$name_info->{used_by}}) {
+		debug "\t=> used by $curr\n";
+		
+		my $short_curr = pretty_name($curr);
+		debug "\tpretty name is $short_curr\n";
+		
+		#(undef, undef, my $curr_info) = get_pkgvar($curr); # get function info
+		(undef, undef, my $curr_info) = resolve($curr); # get function info
+		my $curr_info_dump = Data::Dumper->Dump([$curr_info],['curr_info']);
+		$curr_info_dump =~ s/^/\t\t/mg;
+		debug $curr_info_dump;
+		die "$curr (used by $name) has no info -- wtf?\n"
+			unless defined $curr_info;
+		
 		my $anchor = anchor_name($curr);
-		push @used_by, "<a href=\"#$anchor\">$short_curr</a>";
+		debug "\t\tanchor name is $anchor\n";
+		
+		#my $tip = defined $curr_info && exists $curr_info->{file}
+		#	? encode_entities($curr_info->{file}.' line '.$curr_info->{line})
+		#	: '';
+		my $tip = exists $curr_info->{file}
+			? encode_entities($curr_info->{file}.' line '.$curr_info->{line})
+			: '';
+		push @used_by, "<span class='name-ref name-type-$curr_info->{type}'>"
+			."<a href='#$anchor' title='$tip'>$short_curr</a>"
+			."</span>";
+		
 	}
 	return @used_by;
 }
 
-sub no_main {
+sub pretty_name {
 	my ($name) = @_;
 	if ($name =~ /^(.)main::([^\:]+)$/) {
-		return "$1$2";
+		$name = "$1$2";
+	}
+	$name = encode_entities($name);
+	return $name;
+}
+
+sub smart_anchor_name {
+	my ($info) = @_;
+	my $name = $info->{name};
+	if ($info->{type} eq 'our') {
+		return anchor_name($name);
 	} else {
-		return $name;
+		my $file = $info->{file};
+		return anchor_name("$file:") . anchor_name("$name");
 	}
 }
 
 sub anchor_name {
 	my ($string) = @_;
-	my ($sigil, $rest) = (substr($string,0,1), substr($string,1));
+	my ($sigil, $rest) = split_name($string);
+	$sigil = 'f' if not $sigil; # could be a file name
 	$sigil = ($sigil eq '$' ? 's'
 		: ($sigil eq '@' ? 'a'
 		: ($sigil eq '%' ? 'h'
-		: ($sigil eq '&' ? 'f'
-		: ''))));
-	$rest =~ s/([^A-Za-z0-9_])/sprintf(".%02X",ord($1))/ge;
+		: ($sigil eq '&' ? 'c'
+		: $sigil))));
+	$rest =~ s/([^-A-Za-z0-9_])/sprintf(".%02X",ord($1))/ge;
 	return "$sigil$rest";
 }
 
