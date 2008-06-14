@@ -1,0 +1,124 @@
+#!/usr/bin/perl
+
+# Make a Problem Library type pointer to the given problem
+
+# This new pg file will tell webwork to process the contents of
+# the existing pg file when used as a problem.  It includes the
+# tags which tell NPL-update to ignore it.
+
+# See the usage statements below.  The first argument is the
+# existing path.  The second argument is the place to put the
+# special file.  There should not be a file in that position
+# already.  This is a safety feature in case the script is
+# called with the arguments reversed.  So, if file1 is a duplicate
+# of file2 and you want to keep file1 and make file2 the linking
+# file, then delete file2 before calling this script.
+
+# This needs to be called from the top directory of the Problem
+# Library (so the directory containing 270, Indiana, Michigan, etc.
+
+# This script does not execute any cvs commands.  If a file really is
+# new, then you would need "cvs add".  If you just deleted a file and
+# are now putting in the linking file, then you would just need "cvs up"
+# If you have several files, you may want to deal with them all and
+# then call "cvs up" just once.
+
+# This could be made nicer in several ways:
+#  - pod style documentation
+#  - command line flag to delete the second argument if it already
+#    exists
+#  - command line flag to call cvs update
+#  - declare more variables with "my"
+
+use File::Basename;
+
+if(scalar(@ARGV) != 2) {
+	print "Usage: npl-problem-pointer existing/path new/path\n";
+	print "Paths should not start with Library\n";
+	print "Run me from the top of the problem library.\n";
+	exit();
+}
+
+$existpath = $ARGV[0];
+$newpath = $ARGV[1];
+
+
+if( -f $newpath ) {
+	print "I don't want to overwrite $newpath ... quitting\n";
+	exit();
+}
+
+sub surePathToFile($) {
+        # constructs intermediate directories enroute to the file 
+        # the input path must be the path relative to this starting directory
+        my $start_directory = "";
+        my $path = shift;
+        my $delim = "/"; 
+        unless ($path ) {
+                warn "missing directory<br> surePathToFile  start_directory   pa
+th ";
+                return '';
+        }
+        my ($perms, $groupID) = (stat ".")[2,5];
+        
+        #$path =~ s|^$start_directory|| if $path =~ m|^$start_directory|;
+
+        
+        # find the nodes on the given path
+        my @nodes = split("$delim",$path);
+        
+        # create new path
+        $path = $start_directory;
+        
+        while (@nodes>1) {  # the last node is the file name
+                $path = $path . shift (@nodes) . "/";
+                unless (-e $path) {
+                        mkdir($path, $perms)
+                                or warn "Failed to create directory $path with start directory $start_directory ";
+			system("cvs add $path");
+                }
+
+        }
+        
+        $path = $path . shift(@nodes);
+        return $path;
+}
+
+$dir = dirname($newpath);
+$fname = basename($newpath);
+
+surePathToFile($newpath);
+
+if(not open(OUF, ">$newpath")) {
+	print "Cannot write to $newpath ... quitting\n";
+	exit();
+}
+
+# Make the directory if we have to
+
+
+print OUF <<"HERE";
+# This file is just a pointer to the file
+#
+# "Library/$existpath"
+#
+# You may want to change your problem set to use that problem
+# directly, especially if you want to make a copy of the problem
+# for modification.
+
+DOCUMENT();
+includePGproblem("Library/$existpath");
+ENDDOCUMENT();
+
+## These tags keep this problem from being added to the NPL database
+## 
+## DBsubject('ZZZ-Inserted Text')
+## DBchapter('ZZZ-Inserted Text')
+## DBsection('ZZZ-Inserted Text')
+
+HERE
+
+close(OUF);
+
+#system("cvs add $newpath");
+
