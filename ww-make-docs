@@ -21,6 +21,7 @@ our @sections = (
 	doc => "Documentation",
 	lib => "Libraries",
 	macros => "Macros",
+    clients => "Clients",
 );
 
 sub new {
@@ -142,7 +143,7 @@ sub process_pod {
 	);
 	#unlink $podpp_path;
 	# postprocess HTML to add SSI tags for header and footer
-	$self->postprocess_pod($html_path);
+    $self->postprocess_pod($html_path);
 }
 
 sub postprocess_pod {
@@ -170,14 +171,19 @@ sub postprocess_pod {
 			if ($line =~ /\s*<title>(.*)<\/title>.*$/) {
 				$title = $1;
 			}
+            elsif ($file =~ /\/(w+)\.html$/) {
+                $title = $1;
+            }
 		}
 	}
 	seek $fh, 0, 0;
 	truncate $fh, 0;
-	print $fh "<!--#set var=\"title\" value=\"$title\" -->", "\n" if defined $title;
-	print $fh '<!--#include virtual="/doc/cvs/header.html" -->' . "\n";
+    #print $fh "<!--#set var=\"title\" value=\"$title\" -->", "\n" if defined $title;
+    write_header($fh,$title);
+    #print $fh '<!--#include virtual="/doc/cvs/header.html" -->' . "\n";
 	print $fh $text;
-	print $fh '<!--#include virtual="/doc/cvs/footer.html" -->' . "\n";
+    #print $fh '<!--#include virtual="/doc/cvs/footer.html" -->' . "\n";
+    write_footer($fh);
 	my $mode = (stat $fh)[2] & 0777 | 0111;
 	chmod $mode, $fh;
 }
@@ -208,8 +214,9 @@ sub write_index {
 	#my $header = "<html><head><title>Index $source_root</title></head><body>\n";
 	#my $content_start = "<h1>Index for $source_root</h1><ul>\n";
 	
-	my $header = qq|<!--#set var="title" value="Index for $source_root" -->| . "\n"
-		. '<!--#include virtual="/doc/cvs/header.html" -->' . "\n";
+    #my $header = qq|<!--#set var="title" value="Index for $source_root" -->| . "\n"
+    #	. '<!--#include virtual="/doc/cvs/header.html" -->' . "\n";
+    my $title = "Index for $source_root";
 	my $content_start = "<ul>";
 	my $content = "";
 	
@@ -233,10 +240,13 @@ sub write_index {
 	#my $content_end = "<p>Generated $date</p>\n";
 	#my $footer = "</body></html>\n";
 	my $content_end = "";
-	my $footer = '<!--#include virtual="/doc/cvs/footer.html" -->' . "\n";
+    #my $footer = '<!--#include virtual="/doc/cvs/footer.html" -->' . "\n";
 	
 	my $fh = new IO::File($out_path, 'w') or die "Failed to open index '$out_path' for writing: $!\n";
-	print $fh $header, $content_start, $content, $content_end, $footer;
+    write_header($fh,$title);
+    #print $fh $header, $content_start, $content, $content_end, $footer;
+    print $fh $content_start, $content, $content_end;
+    write_footer($fh);
 	my $mode = (stat $fh)[2] & 0777 | 0111;
 	chmod $mode, $fh;
 }
@@ -278,6 +288,96 @@ sub do_pod2html {
 	);
 	#print join(" ", 'pod2html', @args), "\n";
 	pod2html(@args);
+}
+
+sub write_header {
+	my $fh = shift;
+    my $title = shift;
+	print $fh qq{ 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+ <head>
+  <!-- <base href="http://webwork.maa.org/" /> -->
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <title>$title</title>
+  <style type="text/css" media="screen,projection">/*<![CDATA[*/ \x40import "/skins/monobook/main.css?42b"; /*]]>*/</style>
+  <link rel="stylesheet" type="text/css" media="print" href="/skins/common/commonPrint.css?42b" />
+  <link rel="stylesheet" type="text/css" media="handheld" href="/skins/monobook/handheld.css?42b" />
+  <!--[if lt IE 5.5000]><style type="text/css">\x40import "/skins/monobook/IE50Fixes.css?42b";</style><![endif]-->
+  <!--[if IE 5.5000]><style type="text/css">\x40import "/skins/monobook/IE55Fixes.css?42b";</style><![endif]-->
+  <!--[if IE 6]><style type="text/css">\x40import "/skins/monobook/IE60Fixes.css?42b";</style><![endif]-->
+  <!--[if IE 7]><style type="text/css">\x40import "/skins/monobook/IE70Fixes.css?42b";</style><![endif]-->
+  <!--[if lt IE 7]><script type="text/javascript" src="/skins/common/IEFixes.js?42b"></script>
+  <meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+ </head>
+ <body class="mediawiki ns-0 ltr page-Main_Page">
+  <div id="globalWrapper">
+   <div id="column-content">
+	<div id="content">
+     <a name="top" id="top"></a>
+     <h1 class="firstHeading">$title</h1>
+     <div id="bodyContent">
+      <h3 id="siteSub">From WeBWorK</h3>
+      <div id="contentSub"></div>
+      <div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a></div>
+	  <!-- <base href="http://devel.webwork.rochester.edu/doc/cvs/" /> -->
+      <!-- start content -->
+      }
+}
+
+sub write_footer {
+	my $fh = shift;
+	print $fh <<'EOF';
+      <!-- end content -->
+	  <!-- <base href="http://webwork.maa.org/" /> -->
+      <div class="visualClear"></div>
+     </div>
+	</div>
+   </div>
+   <div id="column-one">
+	<div class="portlet" id="p-logo">
+     <a style="background-image: url(/pod/webwork_square.png);" href="/wiki/Main_Page" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+	<div class='portlet' id='p-navigation-$module'>
+	 <h5>Navigation</h5>
+	 <div class='pBody'>
+	  <ul>
+	   <li><a href="/pod/">SVN Docs Home</a></li>
+	   <li><a href="/wiki/Main_Page">WeBWorK Wiki</a></li>
+	  </ul>
+	 </div>
+	</div>
+EOF
+	#for my $module (sort keys %index) {
+		#print $fh "<div class='portlet' id='p-navigation-$module'>\n";
+		#print $fh "<h5>$module</h5>\n";
+		#print $fh "<div class='pBody'>\n";
+		#print $fh "<ul>\n";
+		#for my $version (reverse sort keys %{$index{$module}}) {
+			#if (ref $index{$module}{$version}) {
+				#print $fh "<li>$version<ul>\n";
+				#for my $extra (sort keys %{$index{$module}{$version}}) {
+					#print $fh "<li><a href=\"$BASE_URL/$index{$module}{$version}{$extra}\">$extra</a></li>\n";
+				#}
+				#print $fh "</ul></li>\n";
+			#} else {
+				#print $fh "<li><a href=\"$BASE_URL/$index{$module}{$version}\">$version</a></li>\n";
+			#}
+		#}
+		#print $fh "</ul>\n";
+		#print $fh "</div></div>\n";
+	#}
+	print $fh <<'EOF';
+   </div><!-- end of the left (by default at least) column -->
+   <div class="visualClear"></div>
+   <script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+  </div>
+ </body>
+</html>
+
+EOF
 }
 
 package main;
