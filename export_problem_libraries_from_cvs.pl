@@ -2,6 +2,8 @@
 
 use strict;
 
+##this comment is just a change so I can test pushing to the svn from git
+
 ## run this script in a directory that does not contain
 ## any files whose names end in ".tar.gz" since this 
 ## produces one such file for each module below and then
