@@ -1,0 +1,9 @@
+<map id="G" name="G">
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1add.html" title="BOP::add" alt="" coords="5,229,83,256"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1divide.html" title="BOP::divide" alt="" coords="107,229,195,256"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1multiply.html" title="BOP::multiply" alt="" coords="219,229,320,256"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1power.html" title="BOP::power" alt="" coords="344,229,435,256"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1subtract.html" title="BOP::subtract" alt="" coords="459,229,563,256"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex.html" title="Parser::Legacy::LimitedComplex" alt="" coords="164,80,375,107"/>
+<area shape="rect" href="$classParser_1_1Legacy.html" title="Parser::Legacy" alt="" coords="215,5,324,32"/>
+</map>

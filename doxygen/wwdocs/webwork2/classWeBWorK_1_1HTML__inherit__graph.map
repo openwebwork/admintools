@@ -1,0 +1,7 @@
+<map id="G" name="G">
+<area shape="rect" href="$classWeBWorK_1_1HTML_1_1ComboBox.html" title="WeBWorK::HTML::ComboBox" alt="" coords="137,5,335,32"/>
+<area shape="rect" href="$classWeBWorK_1_1HTML_1_1DropdownRecordList.html" title="WeBWorK::HTML::DropdownRecordList" alt="" coords="111,56,361,83"/>
+<area shape="rect" href="$classWeBWorK_1_1HTML_1_1InfoBox.html" title="WeBWorK::HTML::InfoBox" alt="" coords="148,107,324,133"/>
+<area shape="rect" href="$classWeBWorK_1_1HTML_1_1OptionList.html" title="WeBWorK::HTML::OptionList" alt="" coords="140,157,332,184"/>
+<area shape="rect" href="$classWeBWorK_1_1HTML_1_1ScrollingRecordList.html" title="WeBWorK::HTML::ScrollingRecordList" alt="" coords="113,208,359,235"/>
+</map>

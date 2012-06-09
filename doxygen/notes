@@ -1,0 +1,14 @@
+June 8 2012 djun.kim@cielosystems.com
+
+installed Doxygen::Filter::Perl from CPAN
+
+plan:
+  * git fetch code to ~aubreyja/openwebwork/{pg,webwork2}
+  * run doxygen, generate docs to ~jaubrey/doxygen/{pg,ww2}
+  * copy docs to /var/www/wwdocs 
+
+
+
+
+
+

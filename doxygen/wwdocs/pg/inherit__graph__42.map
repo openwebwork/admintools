@@ -1,0 +1,22 @@
+<map id="G" name="G">
+<area shape="rect" href="$classParser_1_1Legacy.html" title="Legacy" alt="" coords="5,347,69,373"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1FormulaWithUnits.html" title="Parser::Legacy::FormulaWithUnits" alt="" coords="117,220,339,247"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex.html" title="LimitedComplex" alt="" coords="171,271,285,297"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedNumeric.html" title="LimitedNumeric" alt="" coords="172,321,284,348"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1NumberWithUnits.html" title="Parser::Legacy::NumberWithUnits" alt="" coords="119,372,337,399"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1Numeric.html" title="Parser::Legacy::Numeric" alt="" coords="145,423,311,449"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1ObjectWithUnits.html" title="Parser::Legacy::ObjectWithUnits" alt="" coords="123,473,333,500"/>
+<area shape="rect" href="$classLimitedComplex_1_1UOP.html" title="LimitedComplex::UOP" alt="" coords="395,56,544,83"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP.html" title="BOP" alt="" coords="445,233,493,260"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1UOP.html" title="UOP" alt="" coords="445,309,493,336"/>
+<area shape="rect" href="$classLimitedComplex_1_1UOP_1_1minus.html" title="LimitedComplex::UOP::minus" alt="" coords="601,5,793,32"/>
+<area shape="rect" href="$classLimitedComplex_1_1UOP_1_1plus.html" title="LimitedComplex::UOP::plus" alt="" coords="607,56,788,83"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1add.html" title="BOP::add" alt="" coords="659,107,736,133"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1divide.html" title="BOP::divide" alt="" coords="653,157,741,184"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1multiply.html" title="BOP::multiply" alt="" coords="647,208,748,235"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1power.html" title="BOP::power" alt="" coords="652,259,743,285"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1BOP_1_1subtract.html" title="BOP::subtract" alt="" coords="645,309,749,336"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1UOP_1_1minus.html" title="UOP::minus" alt="" coords="652,360,743,387"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedComplex_1_1UOP_1_1plus.html" title="UOP::plus" alt="" coords="657,411,737,437"/>
+<area shape="rect" href="$classParser_1_1Legacy_1_1LimitedNumeric_1_1Number.html" title="LimitedNumeric::Number" alt="" coords="388,360,551,387"/>
+</map>

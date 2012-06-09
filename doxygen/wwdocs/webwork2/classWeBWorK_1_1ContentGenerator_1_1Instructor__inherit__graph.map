@@ -1,0 +1,32 @@
+<map id="G" name="G">
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1AddUsers.html" title="WeBWorK::ContentGenerator::Instructor::AddUsers" alt="" coords="725,5,1045,32"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1Assigner.html" title="WeBWorK::ContentGenerator::Instructor::Assigner" alt="" coords="728,56,1043,83"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1Compare.html" title="WeBWorK::ContentGenerator::Instructor::Compare" alt="" coords="728,107,1043,133"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1Config.html" title="WeBWorK::ContentGenerator::Instructor::Config" alt="" coords="736,157,1035,184"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1FileManager.html" title="WeBWorK::ContentGenerator::Instructor::FileManager" alt="" coords="719,208,1052,235"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1GetLibrarySetProblems.html" title="WeBWorK::ContentGenerator::Instructor::GetLibrarySetProblems" alt="" coords="687,259,1084,285"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1GetTargetSetProblems.html" title="WeBWorK::ContentGenerator::Instructor::GetTargetSetProblems" alt="" coords="688,309,1083,336"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1Index.html" title="WeBWorK::ContentGenerator::Instructor::Index" alt="" coords="739,360,1032,387"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1PGProblemEditor.html" title="WeBWorK::ContentGenerator::Instructor::PGProblemEditor" alt="" coords="704,411,1067,437"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1PGProblemEditor2.html" title="WeBWorK::ContentGenerator::Instructor::PGProblemEditor2" alt="" coords="700,461,1071,488"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1Preflight.html" title="WeBWorK::ContentGenerator::Instructor::Preflight" alt="" coords="731,512,1040,539"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1ProblemSetDetail.html" title="WeBWorK::ContentGenerator::Instructor::ProblemSetDetail" alt="" coords="704,563,1067,589"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1ProblemSetList.html" title="WeBWorK::ContentGenerator::Instructor::ProblemSetList" alt="" coords="709,613,1061,640"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1ProblemSetList2.html" title="WeBWorK::ContentGenerator::Instructor::ProblemSetList2" alt="" coords="705,664,1065,691"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1Scoring.html" title="WeBWorK::ContentGenerator::Instructor::Scoring" alt="" coords="732,715,1039,741"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1ScoringDownload.html" title="WeBWorK::ContentGenerator::Instructor::ScoringDownload" alt="" coords="704,765,1067,792"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1SendMail.html" title="WeBWorK::ContentGenerator::Instructor::SendMail" alt="" coords="727,816,1044,843"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1SetMaker.html" title="WeBWorK::ContentGenerator::Instructor::SetMaker" alt="" coords="725,867,1045,893"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1SetMaker2.html" title="WeBWorK::ContentGenerator::Instructor::SetMaker2" alt="" coords="723,917,1048,944"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1SetMaker3.html" title="WeBWorK::ContentGenerator::Instructor::SetMaker3" alt="" coords="723,968,1048,995"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1SetsAssignedToUser.html" title="WeBWorK::ContentGenerator::Instructor::SetsAssignedToUser" alt="" coords="693,1019,1077,1045"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1ShowAnswers.html" title="WeBWorK::ContentGenerator::Instructor::ShowAnswers" alt="" coords="713,1069,1057,1096"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1Stats.html" title="WeBWorK::ContentGenerator::Instructor::Stats" alt="" coords="739,1120,1032,1147"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1StudentProgress.html" title="WeBWorK::ContentGenerator::Instructor::StudentProgress" alt="" coords="705,1171,1065,1197"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1UserDetail.html" title="WeBWorK::ContentGenerator::Instructor::UserDetail" alt="" coords="724,1221,1047,1248"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1UserList.html" title="WeBWorK::ContentGenerator::Instructor::UserList" alt="" coords="729,1272,1041,1299"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1UserList2.html" title="WeBWorK::ContentGenerator::Instructor::UserList2" alt="" coords="727,1323,1044,1349"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator_1_1Instructor_1_1UsersAssignedToSet.html" title="WeBWorK::ContentGenerator::Instructor::UsersAssignedToSet" alt="" coords="693,1373,1077,1400"/>
+<area shape="rect" href="$classWeBWorK_1_1ContentGenerator.html" title="WeBWorK::ContentGenerator" alt="" coords="140,689,332,716"/>
+<area shape="rect" href="$classWeBWorK.html" title="WeBWorK" alt="" coords="7,689,89,716"/>
+</map>
