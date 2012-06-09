@@ -1,8 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classWeBWorK_1_1PG_1_1ImageGenerator.html" title="WeBWorK::PG::ImageGenerator" alt="" coords="9,80,220,107"/>
-<area shape="rect" href="$classWeBWorK_1_1PG_1_1IO.html" title="WeBWorK::PG::IO" alt="" coords="244,80,375,107"/>
-<area shape="rect" href="$classWeBWorK_1_1PG_1_1Translator.html" title="WeBWorK::PG::Translator" alt="" coords="399,80,575,107"/>
-<area shape="rect" href="$classWeBWorK_1_1PG_1_1IO_1_1Daemon2.html" title="WeBWorK::PG::IO::Daemon2" alt="" coords="5,155,200,181"/>
-<area shape="rect" href="$classWeBWorK_1_1PG_1_1IO_1_1WW1.html" title="WeBWorK::PG::IO::WW1" alt="" coords="224,155,395,181"/>
-<area shape="rect" href="$classWeBWorK_1_1PG_1_1IO_1_1WW2.html" title="WeBWorK::PG::IO::WW2" alt="" coords="419,155,589,181"/>
-</map>

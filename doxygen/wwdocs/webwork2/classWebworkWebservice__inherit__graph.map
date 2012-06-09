@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classWebworkWebservice_1_1CourseActions.html" title="WebworkWebservice::CourseActions" alt="" coords="203,5,437,32"/>
-<area shape="rect" href="$classWebworkWebservice_1_1LibraryActions.html" title="WebworkWebservice::LibraryActions" alt="" coords="204,56,436,83"/>
-<area shape="rect" href="$classWebworkWebservice_1_1MathTranslators.html" title="WebworkWebservice::MathTranslators" alt="" coords="199,107,441,133"/>
-<area shape="rect" href="$classWebworkWebservice_1_1RenderProblem.html" title="WebworkWebservice::RenderProblem" alt="" coords="200,157,440,184"/>
-<area shape="rect" href="$classWebworkWebservice_1_1SetActions.html" title="WebworkWebservice::SetActions" alt="" coords="213,208,427,235"/>
-</map>

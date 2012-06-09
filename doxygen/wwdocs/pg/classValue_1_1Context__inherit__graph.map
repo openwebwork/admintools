@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classValue_1_1Context_1_1Data.html" title="Value::Context::Data" alt="" coords="283,5,424,32"/>
-<area shape="rect" href="$classValue_1_1Context_1_1Diagnostics.html" title="Value::Context::Diagnostics" alt="" coords="263,56,444,83"/>
-<area shape="rect" href="$classValue_1_1Context_1_1Flags.html" title="Value::Context::Flags" alt="" coords="280,107,427,133"/>
-<area shape="rect" href="$classValue_1_1Context_1_1Lists.html" title="Value::Context::Lists" alt="" coords="283,157,424,184"/>
-<area shape="rect" href="$classValue.html" title="Value" alt="" coords="5,81,59,108"/>
-</map>

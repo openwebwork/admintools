@@ -1,6 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classWeBWorK_1_1Utils_1_1CourseManagement_1_1sql__moodle.html" title="WeBWorK::Utils::CourseManagement::sql_moodle" alt="" coords="596,5,911,32"/>
-<area shape="rect" href="$classWeBWorK_1_1Utils_1_1CourseManagement_1_1sql__single.html" title="WeBWorK::Utils::CourseManagement::sql_single" alt="" coords="600,56,907,83"/>
-<area shape="rect" href="$classWeBWorK_1_1Utils.html" title="WeBWorK::Utils" alt="" coords="139,31,256,57"/>
-<area shape="rect" href="$classWeBWorK.html" title="WeBWorK" alt="" coords="7,31,89,57"/>
-</map>
